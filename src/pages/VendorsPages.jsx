@@ -15,6 +15,12 @@ import {
 } from '../services/vendorsApi'
 import { assetUrl, toFormData } from '../utils/format'
 
+const isVendorApproved = (vendor) =>
+  Boolean(vendor?.is_approve ?? vendor?.isApproved ?? vendor?.is_approved ?? false)
+
+const isVendorBlocked = (vendor) =>
+  Boolean(vendor?.block ?? vendor?.isBlocked ?? vendor?.is_blocked ?? false)
+
 export function VendorsPage() {
   const [search, setSearch] = useState('')
   const [approval, setApproval] = useState('all')
@@ -28,7 +34,7 @@ export function VendorsPage() {
   const shops = responseItems(data)
   const rows = useMemo(() => shops.filter((shop) => {
     const matchSearch = String(shop.name || '').toLowerCase().includes(search.toLowerCase())
-    const approved = shop.isApproved ?? shop.is_approved
+    const approved = isVendorApproved(shop)
     return matchSearch && (approval === 'all' || (approval === 'approved' ? approved : !approved))
   }), [shops, search, approval])
   const mutate = async (operation, id, message) => {
@@ -42,13 +48,13 @@ export function VendorsPage() {
     </div> },
     { title: 'Address', dataIndex: 'address', ellipsis: true },
     { title: 'Products', render: (_, row) => row.total_products ?? row.products_count ?? 0 },
-    { title: 'Approval', render: (_, row) => <StatusTag value={(row.isApproved ?? row.is_approved) ? 'approved' : 'pending'} /> },
-    { title: 'Status', render: (_, row) => <StatusTag value={(row.isBlocked ?? row.is_blocked) ? 'blocked' : 'active'} /> },
+    { title: 'Approval', render: (_, row) => <StatusTag value={isVendorApproved(row) ? 'approved' : 'pending'} /> },
+    { title: 'Status', render: (_, row) => <StatusTag value={isVendorBlocked(row) ? 'blocked' : 'active'} /> },
     { title: 'Action', fixed: 'right', render: (_, row) => <div className="toolbar">
       <Button onClick={() => setSelected(row)}>Details</Button>
-      {!(row.isApproved ?? row.is_approved) && <Button type="primary" onClick={() => mutate(approve, row._id, 'Vendor approved')}>Approve</Button>}
-      {!(row.isApproved ?? row.is_approved) && <Button danger onClick={() => mutate(reject, row._id, 'Vendor rejected')}>Reject</Button>}
-      <Button onClick={() => mutate(block, row._id, 'Vendor status updated')}>{(row.isBlocked ?? row.is_blocked) ? 'Unblock' : 'Block'}</Button>
+      {!isVendorApproved(row) && <Button type="primary" onClick={() => mutate(approve, row._id, 'Vendor approved')}>Approve</Button>}
+      {!isVendorApproved(row) && <Button danger onClick={() => mutate(reject, row._id, 'Vendor rejected')}>Reject</Button>}
+      <Button onClick={() => mutate(block, row._id, 'Vendor status updated')}>{isVendorBlocked(row) ? 'Unblock' : 'Block'}</Button>
       <ConfirmButton danger title="Delete this vendor?" onConfirm={() => mutate(remove, row._id, 'Vendor deleted')}>Delete</ConfirmButton>
     </div> },
   ]
@@ -72,8 +78,8 @@ export function VendorsPage() {
         { key: 'email', label: 'Email', children: selected.user?.email || 'N/A' },
         { key: 'address', label: 'Address', children: selected.address || 'N/A' },
         { key: 'products', label: 'Total Products', children: selected.total_products ?? 0 },
-        { key: 'approval', label: 'Approval Status', children: <StatusTag value={selected.isApproved ? 'approved' : 'pending'} /> },
-        { key: 'block', label: 'Block Status', children: <StatusTag value={selected.isBlocked ? 'blocked' : 'active'} /> },
+        { key: 'approval', label: 'Approval Status', children: <StatusTag value={isVendorApproved(selected) ? 'approved' : 'pending'} /> },
+        { key: 'block', label: 'Block Status', children: <StatusTag value={isVendorBlocked(selected) ? 'blocked' : 'active'} /> },
       ]} />}
     </Modal>
   </>

@@ -16,8 +16,8 @@ export default function DashboardLayout() {
   const vendor = profile?.role === 'VENDOR' || location.pathname.startsWith('/vendor')
   const { data: notificationData } = useGetNotificationsQuery({ page: 1, limit: 50 })
   const { data: unreadData } = useGetUnreadConversationCountQuery()
-  const unread = notificationData?.data?.unread_count || notificationData?.unread_count || 0
-  const messages = unreadData?.data?.count || unreadData?.data || 0
+  const unread = Number(notificationData?.data?.unread_count ?? notificationData?.unread_count ?? 0) || 0
+  const messages = Number(unreadData?.data?.count ?? unreadData?.count ?? 0) || 0
   const logout = () => { clearAuthStorage(); navigate('/login', { replace: true }) }
   const menu = { items: [
     { key: 'profile', label: 'Profile', onClick: () => navigate(vendor ? '/vendor/shop-profile' : '/profile') },
