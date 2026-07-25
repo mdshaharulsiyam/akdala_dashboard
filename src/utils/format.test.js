@@ -3,7 +3,7 @@ import { assetUrl, formatCurrency, statusColor, titleCase } from './format'
 
 describe('recovered helpers', () => {
   it('normalizes API asset paths', () => {
-    expect(assetUrl('uploads\\logo.png')).toBe('http://localhost:5004/uploads/logo.png')
+    expect(assetUrl('uploads\\logo.png')).toBe('https://api.akdala.com/uploads/logo.png')
     expect(assetUrl('https://cdn.example/image.png')).toBe('https://cdn.example/image.png')
   })
   it('formats display values', () => {
