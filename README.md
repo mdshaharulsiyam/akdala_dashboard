@@ -11,11 +11,11 @@ npm install
 npm run dev
 ```
 
-The API and Socket.IO origins default to the local backend:
+The API and Socket.IO origins default to the live backend:
 
 ```env
-VITE_API_BASE_URL=http://localhost:5004
-VITE_SOCKET_URL=http://localhost:5004
+VITE_API_BASE_URL=https://api.akdala.com
+VITE_SOCKET_URL=https://api.akdala.com
 ```
 
 Copy `.env.example` to `.env` to override either value.
