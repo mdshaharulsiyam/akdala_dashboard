@@ -19,6 +19,15 @@ import {
 import { useCreateConversationMutation } from '../services/messagingApi'
 import { assetUrl, formatCurrency, toFormData } from '../utils/format'
 
+const isProductApproved = (product) =>
+  Boolean(product?.is_approved ?? product?.isApproved ?? false)
+
+const isProductFeatured = (product) =>
+  Boolean(product?.is_featured ?? product?.isFeatured ?? false)
+
+const isProductBlocked = (product) =>
+  Boolean(product?.block ?? product?.isBlocked ?? false)
+
 export function ProductsPage() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -44,9 +53,9 @@ export function ProductsPage() {
   const actions = (row) => <div className="toolbar">
     <Button onClick={() => setSelected(row)}>View Details</Button>
     <Button onClick={() => navigate(`${vendor ? '/vendor' : ''}/products/${row._id}/edit`)}>Update</Button>
-    {!vendor && !row.isApproved && <Button type="primary" onClick={() => act(approve, row._id, 'Product approved')}>Approve</Button>}
-    {!vendor && <Button onClick={() => act(feature, row._id, 'Featured status updated')}>{row.isFeatured ? 'Unfeature' : 'Feature'}</Button>}
-    {!vendor && <Button danger={row.isBlocked} onClick={() => act(block, row._id, 'Block status updated')}>{row.isBlocked ? 'Unblock' : 'Block'}</Button>}
+    {!vendor && !isProductApproved(row) && <Button type="primary" onClick={() => act(approve, row._id, 'Product approved')}>Approve</Button>}
+    {!vendor && <Button onClick={() => act(feature, row._id, 'Featured status updated')}>{isProductFeatured(row) ? 'Unfeature' : 'Feature'}</Button>}
+    {!vendor && <Button danger={isProductBlocked(row)} onClick={() => act(block, row._id, 'Block status updated')}>{isProductBlocked(row) ? 'Unblock' : 'Block'}</Button>}
     <ConfirmButton danger title="Delete this product?" onConfirm={() => act(remove, row._id, 'Product deleted')}>Delete</ConfirmButton>
   </div>
   const columns = [
@@ -54,7 +63,7 @@ export function ProductsPage() {
     { title: 'Price', render: (_, row) => formatCurrency(row.price) },
     { title: 'Stock', dataIndex: 'stock' },
     { title: 'Category', render: (_, row) => row.category?.name || 'N/A' },
-    { title: 'Status', render: (_, row) => <StatusTag value={row.isApproved ? 'approved' : 'pending'} /> },
+    { title: 'Status', render: (_, row) => <StatusTag value={isProductApproved(row) ? 'approved' : 'pending'} /> },
     { title: 'Action', render: (_, row) => actions(row) },
   ]
   return <>
@@ -75,7 +84,7 @@ export function ProductsPage() {
           ? <Table rowKey="_id" columns={columns} dataSource={rows} pagination={{ current: page, pageSize: 10, total: data?.meta?.total, onChange: setPage }} scroll={{ x: 1000 }} />
           : <div className="grid-3-source">{rows.map((row) => <article className="product-card" key={row._id}>
             <img src={assetUrl(row.img?.[0])} alt={row.name} />
-            <div className="product-card-body"><h3>{row.name}</h3><p>{formatCurrency(row.price)}</p><StatusTag value={row.isApproved ? 'approved' : 'pending'} />{actions(row)}</div>
+            <div className="product-card-body"><h3>{row.name}</h3><p>{formatCurrency(row.price)}</p><StatusTag value={isProductApproved(row) ? 'approved' : 'pending'} />{actions(row)}</div>
           </article>)}</div>}
       </QueryState>
     </section>
@@ -104,7 +113,7 @@ function ProductDetailsModal({ product, open, onClose }) {
           { key: 'name', label: 'Name', children: item.name },
           { key: 'price', label: 'Price', children: formatCurrency(item.price) },
           { key: 'discount', label: 'Discount', children: item.discount || '-' },
-          { key: 'approved', label: 'Approved', children: <StatusTag value={item.isApproved ? 'approved' : 'pending'} /> },
+          { key: 'approved', label: 'Approved', children: <StatusTag value={isProductApproved(item) ? 'approved' : 'pending'} /> },
           { key: 'category', label: 'Category', children: item.category?.name || '-' },
           { key: 'subcategory', label: 'Subcategory', children: item.subcategory?.name || '-' },
           { key: 'attributes', label: 'Attributes', span: 2, children: (item.attributes || item.product_attributes || []).map((a) => `${a.name || a.attribute?.name}: ${(a.values || []).join(', ')}`).join(' · ') || '-' },
@@ -131,7 +140,12 @@ export function ProductFormPage() {
   const item = data?.data
   useEffect(() => {
     if (item) {
-      form.setFieldsValue({ ...item, category: item.category?._id || item.category, subcategory: item.subcategory?._id || item.subcategory })
+      form.setFieldsValue({
+        ...item,
+        category: item.category?._id || item.category,
+        subcategory: item.sub_category?._id || item.sub_category || item.subcategory?._id || item.subcategory,
+        isFeatured: isProductFeatured(item),
+      })
       setDescription(item.description || '')
     }
   }, [item, form])

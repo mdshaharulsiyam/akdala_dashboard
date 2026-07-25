@@ -6,7 +6,14 @@ export const productsApi = baseApi.injectEndpoints({
       query: ({ page = 1, limit = 10, search = '', isFeatured, isApproved } = {}) => ({
         url: 'product/get-all',
         method: 'GET',
-        params: { page, limit, search, isFeatured, isApproved, admin: true },
+        params: {
+          page,
+          limit,
+          search,
+          is_featured: isFeatured,
+          is_approved: isApproved,
+          admin: true,
+        },
       }),
       providesTags: ['Product'],
     }),
