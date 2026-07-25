@@ -2,16 +2,17 @@ import { EyeInvisibleOutlined, EyeOutlined } from '@ant-design/icons'
 import { Button, Checkbox, Form, Input } from 'antd'
 import { useEffect, useState } from 'react'
 import toast from 'react-hot-toast'
-import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
-import { ROLES, STORAGE_KEYS } from '../../constants/app.jsx'
-import { useProfile } from '../../hooks/useProfile'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { STORAGE_KEYS } from '../../constants/app.jsx'
 import {
   useForgetPasswordMutation,
+  useLazyGetProfileQuery,
   useLoginUserMutation,
   useResetPasswordMutation,
   useVerifyCodeMutation,
 } from '../../services/authApi'
-import { readStored, writeStored } from '../../utils/storage'
+import { authorizedDestination, isDashboardRole } from '../../utils/auth'
+import { clearAuthStorage, readStored, writeStored } from '../../utils/storage'
 
 const PasswordInput = (props) => {
   const [visible, setVisible] = useState(false)
@@ -27,19 +28,26 @@ function AuthFrame({ title, subtitle, children }) {
 export function LoginPage() {
   const location = useLocation()
   const [login, { isLoading }] = useLoginUserMutation()
-  const { profile, token, isLoading: profileLoading } = useProfile()
-  const destination = typeof location.state === 'string' ? location.state : '/'
-  if (token && !profileLoading && profile) {
-    return <Navigate to={profile.role === ROLES.VENDOR ? '/vendor/dashboard' : destination} replace />
-  }
+  const [getProfile, { isFetching: profileLoading }] = useLazyGetProfileQuery()
+  const destination = location.state?.from
   const submit = async (values) => {
     try {
       const result = await login(values).unwrap()
-      if (result?.data?.role === ROLES.USER) return toast.error('You are not authorized to access this page.')
-      writeStored(STORAGE_KEYS.token, result?.token)
-      toast.success(result?.data?.message || 'logged in successfully')
-      window.location.href = destination
+      if (!result?.token) throw new Error('Login did not return an access token')
+
+      writeStored(STORAGE_KEYS.token, result.token)
+      const profileResult = await getProfile().unwrap()
+      const profile = profileResult?.data
+
+      if (!isDashboardRole(profile?.role)) {
+        clearAuthStorage()
+        return toast.error('Only administrators and vendors can access this dashboard.')
+      }
+
+      toast.success(result?.message || 'Logged in successfully')
+      window.location.replace(authorizedDestination(profile.role, destination))
     } catch (error) {
+      clearAuthStorage()
       toast.error(error?.data?.message || 'something went wrong')
     }
   }
@@ -53,7 +61,7 @@ export function LoginPage() {
           <PasswordInput placeholder="Enter your password" />
         </Form.Item>
         <div className="auth-links"><Checkbox>Remember Password</Checkbox><Link to="/forget-password">Forget Password?</Link></div>
-        <Button type="primary" htmlType="submit" loading={isLoading} block size="large">Sign in</Button>
+        <Button type="primary" htmlType="submit" loading={isLoading || profileLoading} block size="large">Sign in</Button>
       </Form>
     </AuthFrame>
   )

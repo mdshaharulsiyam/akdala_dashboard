@@ -1,24 +1,31 @@
 import { BellOutlined, MenuOutlined } from '@ant-design/icons'
 import { Avatar, Badge, Button, Drawer, Dropdown } from 'antd'
 import { useState } from 'react'
-import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useDispatch } from 'react-redux'
+import { Outlet, useNavigate } from 'react-router-dom'
 import avatar from '../assets/avatar.jpg'
 import Sidebar from '../components/Sidebar'
+import { ROLES } from '../constants/app.jsx'
 import { useProfile } from '../hooks/useProfile'
 import { useGetNotificationsQuery, useGetUnreadConversationCountQuery } from '../services/messagingApi'
+import { baseApi } from '../services/baseApi'
 import { clearAuthStorage } from '../utils/storage'
 
 export default function DashboardLayout() {
   const [open, setOpen] = useState(false)
+  const dispatch = useDispatch()
   const navigate = useNavigate()
-  const location = useLocation()
   const { profile } = useProfile()
-  const vendor = profile?.role === 'VENDOR' || location.pathname.startsWith('/vendor')
+  const vendor = profile?.role === ROLES.VENDOR
   const { data: notificationData } = useGetNotificationsQuery({ page: 1, limit: 50 })
   const { data: unreadData } = useGetUnreadConversationCountQuery()
   const unread = Number(notificationData?.data?.unread_count ?? notificationData?.unread_count ?? 0) || 0
   const messages = Number(unreadData?.data?.count ?? unreadData?.count ?? 0) || 0
-  const logout = () => { clearAuthStorage(); navigate('/login', { replace: true }) }
+  const logout = () => {
+    clearAuthStorage()
+    dispatch(baseApi.util.resetApiState())
+    navigate('/login', { replace: true })
+  }
   const menu = { items: [
     { key: 'profile', label: 'Profile', onClick: () => navigate(vendor ? '/vendor/shop-profile' : '/profile') },
     { key: 'logout', label: 'Log Out', danger: true, onClick: logout },

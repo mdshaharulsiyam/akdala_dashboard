@@ -66,6 +66,7 @@ export const {
   useChangePasswordMutation,
   useUpdateUserMutation,
   useGetProfileQuery,
+  useLazyGetProfileQuery,
   useGetAllUsersQuery,
   useBlockUserMutation,
   useToggleUserRoleMutation,

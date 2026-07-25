@@ -13,7 +13,7 @@ import UsersPage from '../pages/UsersPage'
 import { NewVendorPage, VendorsPage } from '../pages/VendorsPages'
 import WebSettingsPage from '../pages/WebSettingsPage'
 import { ForgetPasswordPage, LoginPage, OtpPage, ResetPasswordPage } from '../pages/auth/AuthPages'
-import { AdminGuard, VendorGuard } from './guards'
+import { AdminGuard, PublicOnlyGuard, VendorGuard } from './guards'
 
 export const router = createBrowserRouter([
   {
@@ -56,9 +56,9 @@ export const router = createBrowserRouter([
       { path: 'messages', element: <MessagesPage /> },
     ],
   },
-  { path: '/login', element: <LoginPage /> },
-  { path: '/forget-password', element: <ForgetPasswordPage /> },
-  { path: '/otp', element: <OtpPage /> },
-  { path: '/reset-password', element: <ResetPasswordPage /> },
+  { path: '/login', element: <PublicOnlyGuard><LoginPage /></PublicOnlyGuard> },
+  { path: '/forget-password', element: <PublicOnlyGuard><ForgetPasswordPage /></PublicOnlyGuard> },
+  { path: '/otp', element: <PublicOnlyGuard><OtpPage /></PublicOnlyGuard> },
+  { path: '/reset-password', element: <PublicOnlyGuard><ResetPasswordPage /></PublicOnlyGuard> },
   { path: '*', element: <Navigate to="/" replace /> },
 ])
